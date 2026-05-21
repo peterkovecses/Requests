@@ -1,6 +1,6 @@
 # Kovecses.Requests
 
-High-performance, "no-magic" light mediator implementation for .NET 8, 9, and 10.
+High-performance, "no-magic" light request handling implementation for .NET 8, 9, and 10.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![.NET 8.0, 9.0, 10.0](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-blue)
@@ -11,9 +11,9 @@ If you find this project useful, please consider giving it a ⭐ **Star** on Git
 
 Kovecses.Requests was built with a clear focus on three main goals:
 
-1.  **High Performance:** Minimal allocations and zero overhead during request processing. No runtime reflection during execution—everything is resolved by the native .NET DI container.
-2.  **No Magic / Transparent Debugging:** Direct handler injection. No "invisible" dispatchers. If you want to see the implementation, just press `F12` on the handler in your endpoint.
-3.  **Clean Architecture with Pipeline Support:** Enjoy all the benefits of the Mediator pattern (cross-cutting concerns like logging and validation) without the runtime cost and complexity of a central dispatcher.
+1.  **High Performance:** Optimized execution path with minimal allocations. Everything is resolved by the native .NET DI container at startup.
+2.  **No Magic / Transparent Debugging:** Direct handler injection. No "invisible" dispatchers or runtime reflection during execution. If you want to see the implementation, just press `F12` on the handler in your endpoint.
+3.  **Clean Architecture with Pipeline Support:** Benefit from decoupled cross-cutting concerns (like logging and validation) via a stateless pipeline implementation that fully supports advanced scenarios like **Retry policies** (Polly) and recovery logic.
 
 ## Installation
 

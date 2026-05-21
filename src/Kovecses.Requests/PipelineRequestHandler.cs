@@ -15,20 +15,16 @@ internal sealed class PipelineRequestHandler<TRequest, TResponse>(
             return inner.Handle(request, cancellationToken);
         }
 
-        var index = -1;
-
-        Task<TResponse> Next()
+        RequestHandlerDelegate<TResponse> GetNextDelegate(int currentIndex)
         {
-            index++;
-
-            if (index < _behaviors.Length)
+            if (currentIndex >= _behaviors.Length)
             {
-                return _behaviors[index].Handle(request, Next, cancellationToken);
+                return () => inner.Handle(request, cancellationToken);
             }
 
-            return inner.Handle(request, cancellationToken);
+            return () => _behaviors[currentIndex].Handle(request, GetNextDelegate(currentIndex + 1), cancellationToken);
         }
 
-        return Next();
+        return GetNextDelegate(0)();
     }
 }
