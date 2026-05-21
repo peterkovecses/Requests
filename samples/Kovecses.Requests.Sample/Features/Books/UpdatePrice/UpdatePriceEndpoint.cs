@@ -16,10 +16,10 @@ internal static class UpdatePriceEndpoint
         CancellationToken cancellationToken)
     {
         var command = new UpdatePriceCommand(id, request.NewPrice);
-        var result = await handler.Handle(command, cancellationToken);
+        var result = await handler.HandleAsync(command, cancellationToken);
         
-        return result 
-            ? Results.NoContent() 
+        return result
+            ? Results.NoContent()
             : Results.NotFound();
     }
 }

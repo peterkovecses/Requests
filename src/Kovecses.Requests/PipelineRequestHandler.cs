@@ -8,21 +8,21 @@ internal sealed class PipelineRequestHandler<TRequest, TResponse>(
 {
     private readonly IPipelineBehavior<TRequest, TResponse>[] _behaviors = [.. behaviors];
 
-    public Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken)
+    public Task<TResponse> HandleAsync(TRequest request, CancellationToken cancellationToken)
     {
         if (_behaviors.Length == 0)
         {
-            return inner.Handle(request, cancellationToken);
+            return inner.HandleAsync(request, cancellationToken);
         }
 
         RequestHandlerDelegate<TResponse> GetNextDelegate(int currentIndex)
         {
             if (currentIndex >= _behaviors.Length)
             {
-                return () => inner.Handle(request, cancellationToken);
+                return () => inner.HandleAsync(request, cancellationToken);
             }
 
-            return () => _behaviors[currentIndex].Handle(request, GetNextDelegate(currentIndex + 1), cancellationToken);
+            return () => _behaviors[currentIndex].HandleAsync(request, GetNextDelegate(currentIndex + 1), cancellationToken);
         }
 
         return GetNextDelegate(0)();

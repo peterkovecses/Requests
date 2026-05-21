@@ -16,16 +16,18 @@ public interface IRequestsBuilder
     /// Adds a global pipeline behavior that applies to all requests.
     /// </summary>
     /// <param name="openBehaviorType">The open generic type of the behavior (e.g., typeof(LoggingBehavior{,})).</param>
+    /// <param name="lifetime">The service lifetime for the behavior.</param>
     /// <returns>The builder for chaining.</returns>
-    IRequestsBuilder AddGlobalBehavior(Type openBehaviorType);
+    IRequestsBuilder AddGlobalBehavior(Type openBehaviorType, ServiceLifetime lifetime = ServiceLifetime.Transient);
 
     /// <summary>
     /// Adds a pipeline behavior to all requests that implement the specified interface.
     /// </summary>
     /// <typeparam name="TInterface">The interface that requests must implement.</typeparam>
     /// <param name="openBehaviorType">The open generic type of the behavior.</param>
+    /// <param name="lifetime">The service lifetime for the behavior.</param>
     /// <returns>The builder for chaining.</returns>
-    IRequestsBuilder AddBehavior<TInterface>(Type openBehaviorType);
+    IRequestsBuilder AddBehavior<TInterface>(Type openBehaviorType, ServiceLifetime lifetime = ServiceLifetime.Transient);
 
     /// <summary>
     /// Explicitly adds a pipeline behavior to a specific request and response type.
@@ -33,8 +35,9 @@ public interface IRequestsBuilder
     /// <typeparam name="TRequest">The type of the request.</typeparam>
     /// <typeparam name="TResponse">The type of the response.</typeparam>
     /// <typeparam name="TBehavior">The type of the behavior.</typeparam>
+    /// <param name="lifetime">The service lifetime for the behavior.</param>
     /// <returns>The builder for chaining.</returns>
-    IRequestsBuilder AddBehavior<TRequest, TResponse, TBehavior>()
+    IRequestsBuilder AddBehavior<TRequest, TResponse, TBehavior>(ServiceLifetime lifetime = ServiceLifetime.Transient)
         where TRequest : IRequest<TResponse>
         where TBehavior : class, IPipelineBehavior<TRequest, TResponse>;
 }

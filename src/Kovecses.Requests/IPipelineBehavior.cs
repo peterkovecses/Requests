@@ -15,11 +15,11 @@ public interface IPipelineBehavior<in TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
     /// <summary>
-    /// Handles the pipeline behavior logic.
+    /// Handles the pipeline behavior logic asynchronously.
     /// </summary>
     /// <param name="request">The request object.</param>
     /// <param name="next">The delegate to call the next behavior or the final handler.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation, containing the response.</returns>
-    Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken);
+    Task<TResponse> HandleAsync(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken);
 }

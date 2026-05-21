@@ -12,7 +12,7 @@ internal static class GetBooksEndpoint
         IRequestHandler<GetBooksQuery, IEnumerable<BookDto>> handler,
         CancellationToken cancellationToken)
     {
-        var result = await handler.Handle(new GetBooksQuery(), cancellationToken);
+        var result = await handler.HandleAsync(new GetBooksQuery(), cancellationToken);
 
         return Results.Ok(result);
     }

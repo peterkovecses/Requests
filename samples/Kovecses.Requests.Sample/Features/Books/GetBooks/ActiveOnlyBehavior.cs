@@ -2,7 +2,7 @@ namespace Kovecses.Requests.Sample.Features.Books.GetBooks;
 
 public class ActiveOnlyBehavior : IPipelineBehavior<GetBooksQuery, IEnumerable<BookDto>>
 {
-    public async Task<IEnumerable<BookDto>> Handle(
+    public async Task<IEnumerable<BookDto>> HandleAsync(
         GetBooksQuery request,
         RequestHandlerDelegate<IEnumerable<BookDto>> next,
         CancellationToken cancellationToken)

@@ -3,7 +3,7 @@ namespace Kovecses.Requests.UnitTests;
 public class PipelineRequestHandlerTests
 {
     [Fact]
-    public async Task Handle_WhenNoBehaviors_ShouldCallInnerHandler()
+    public async Task HandleAsync_WhenNoBehaviors_ShouldCallInnerHandler()
     {
         // Arrange
         var handler = new FakeHandler("Response");
@@ -11,7 +11,7 @@ public class PipelineRequestHandlerTests
         var request = new TestRequest();
 
         // Act
-        var result = await sut.Handle(request, CancellationToken.None);
+        var result = await sut.HandleAsync(request, CancellationToken.None);
 
         // Assert
         Assert.Equal("Response", result);
@@ -19,7 +19,7 @@ public class PipelineRequestHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenBehaviorsExist_ShouldCallThemInOrder()
+    public async Task HandleAsync_WhenBehaviorsExist_ShouldCallThemInOrder()
     {
         // Arrange
         var handler = new FakeHandler("Final");
@@ -32,7 +32,7 @@ public class PipelineRequestHandlerTests
         var request = new TestRequest();
 
         // Act
-        var result = await sut.Handle(request, CancellationToken.None);
+        var result = await sut.HandleAsync(request, CancellationToken.None);
 
         // Assert
         Assert.Equal("Final", result);
@@ -40,7 +40,7 @@ public class PipelineRequestHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenBehaviorShortCircuits_ShouldNotCallInnerHandler()
+    public async Task HandleAsync_WhenBehaviorShortCircuits_ShouldNotCallInnerHandler()
     {
         // Arrange
         var handler = new FakeHandler("Final");
@@ -49,7 +49,7 @@ public class PipelineRequestHandlerTests
         var sut = new PipelineRequestHandler<TestRequest, string>(handler, [behavior]);
 
         // Act
-        var result = await sut.Handle(new TestRequest(), CancellationToken.None);
+        var result = await sut.HandleAsync(new TestRequest(), CancellationToken.None);
 
         // Assert
         Assert.Equal("ShortCircuit", result);
@@ -57,7 +57,7 @@ public class PipelineRequestHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldPropagateCancellationToken()
+    public async Task HandleAsync_ShouldPropagateCancellationToken()
     {
         // Arrange
         using var cts = new CancellationTokenSource();
@@ -68,7 +68,7 @@ public class PipelineRequestHandlerTests
         var sut = new PipelineRequestHandler<TestRequest, string>(handler, [behavior]);
 
         // Act
-        await sut.Handle(new TestRequest(), token);
+        await sut.HandleAsync(new TestRequest(), token);
 
         // Assert
         Assert.True(behavior.TokenReceived.Equals(token));
@@ -76,19 +76,19 @@ public class PipelineRequestHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldBubbleUpExceptions()
+    public async Task HandleAsync_ShouldBubbleUpExceptions()
     {
         // Arrange
         var handler = new ExceptionHandler(new InvalidOperationException("Inner fail"));
         var sut = new PipelineRequestHandler<TestRequest, string>(handler, []);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Handle(new TestRequest(), CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => sut.HandleAsync(new TestRequest(), CancellationToken.None));
         Assert.Equal("Inner fail", ex.Message);
     }
 
     [Fact]
-    public async Task Handle_WhenMultipleNextCallsWithMultipleBehaviors_ShouldWorkCorrectly()
+    public async Task HandleAsync_WhenMultipleNextCallsWithMultipleBehaviors_ShouldWorkCorrectly()
     {
         // Arrange
         var handler = new FakeHandler("Response");
@@ -100,14 +100,14 @@ public class PipelineRequestHandlerTests
         var sut = new PipelineRequestHandler<TestRequest, string>(handler, [retryBehavior, loggingBehavior]);
 
         // Act
-        var result = await sut.Handle(new TestRequest(), CancellationToken.None);
+        var result = await sut.HandleAsync(new TestRequest(), CancellationToken.None);
 
         // Assert
         Assert.Equal("Response", result);
         Assert.Equal(2, handler.CallCount);
         Assert.Equal([
             "Before Logging", "After Logging",
-            "Before Logging", "After Logging" 
+            "Before Logging", "After Logging"
         ], executionOrder);
     }
 
@@ -115,7 +115,7 @@ public class PipelineRequestHandlerTests
     {
         public int CallCount { get; private set; }
         public CancellationToken LastToken { get; private set; }
-        public Task<string> Handle(TestRequest request, CancellationToken cancellationToken)
+        public Task<string> HandleAsync(TestRequest request, CancellationToken cancellationToken)
         {
             CallCount++;
             LastToken = cancellationToken;
@@ -126,12 +126,12 @@ public class PipelineRequestHandlerTests
 
     private sealed class ExceptionHandler(Exception exception) : IRequestHandler<TestRequest, string>
     {
-        public Task<string> Handle(TestRequest request, CancellationToken cancellationToken) => throw exception;
+        public Task<string> HandleAsync(TestRequest request, CancellationToken cancellationToken) => throw exception;
     }
 
     private sealed class OrderedBehavior(string name, List<string> order) : IPipelineBehavior<TestRequest, string>
     {
-        public async Task<string> Handle(TestRequest request, RequestHandlerDelegate<string> next, CancellationToken cancellationToken)
+        public async Task<string> HandleAsync(TestRequest request, RequestHandlerDelegate<string> next, CancellationToken cancellationToken)
         {
             order.Add($"Before {name}");
             var result = await next();
@@ -143,14 +143,14 @@ public class PipelineRequestHandlerTests
 
     private sealed class ShortCircuitBehavior(string response) : IPipelineBehavior<TestRequest, string>
     {
-        public Task<string> Handle(TestRequest request, RequestHandlerDelegate<string> next, CancellationToken cancellationToken)
+        public Task<string> HandleAsync(TestRequest request, RequestHandlerDelegate<string> next, CancellationToken cancellationToken)
             => Task.FromResult(response);
     }
 
     private sealed class TokenCheckingBehavior : IPipelineBehavior<TestRequest, string>
     {
         public CancellationToken TokenReceived { get; private set; }
-        public async Task<string> Handle(TestRequest request, RequestHandlerDelegate<string> next, CancellationToken cancellationToken)
+        public async Task<string> HandleAsync(TestRequest request, RequestHandlerDelegate<string> next, CancellationToken cancellationToken)
         {
             TokenReceived = cancellationToken;
 
@@ -160,14 +160,14 @@ public class PipelineRequestHandlerTests
 
     private sealed class RetryBehavior(int count) : IPipelineBehavior<TestRequest, string>
     {
-        public async Task<string> Handle(TestRequest request, RequestHandlerDelegate<string> next, CancellationToken cancellationToken)
+        public async Task<string> HandleAsync(TestRequest request, RequestHandlerDelegate<string> next, CancellationToken cancellationToken)
         {
             string lastResult = string.Empty;
             for (int i = 0; i < count; i++)
             {
                 lastResult = await next();
             }
-
+            
             return lastResult;
         }
     }

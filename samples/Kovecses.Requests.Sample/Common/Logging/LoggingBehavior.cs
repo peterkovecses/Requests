@@ -4,17 +4,17 @@ public class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior<TReque
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    public async Task<TResponse> Handle(
+    public async Task<TResponse> HandleAsync(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        var startTime = Stopwatch.GetTimestamp();    
+        var startTime = Stopwatch.GetTimestamp();        
         logger.LogStartingRequest(typeof(TRequest).Name);
 
         var response = await next();
 
-        var elapsedTime = Stopwatch.GetElapsedTime(startTime);        
+        var elapsedTime = Stopwatch.GetElapsedTime(startTime);
         logger.LogCompletedRequest(typeof(TRequest).Name, elapsedTime);
 
         return response;

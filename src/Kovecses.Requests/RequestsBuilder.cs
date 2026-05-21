@@ -7,14 +7,14 @@ internal sealed class RequestsBuilder(IServiceCollection services, Assembly[] as
 {
     public IServiceCollection Services => services;
 
-    public IRequestsBuilder AddGlobalBehavior(Type openBehaviorType)
+    public IRequestsBuilder AddGlobalBehavior(Type openBehaviorType, ServiceLifetime lifetime = ServiceLifetime.Transient)
     {
-        services.AddTransient(typeof(IPipelineBehavior<,>), openBehaviorType);
-
+        services.Add(new ServiceDescriptor(typeof(IPipelineBehavior<,>), openBehaviorType, lifetime));
+        
         return this;
     }
 
-    public IRequestsBuilder AddBehavior<TInterface>(Type openBehaviorType)
+    public IRequestsBuilder AddBehavior<TInterface>(Type openBehaviorType, ServiceLifetime lifetime = ServiceLifetime.Transient)
     {
         var requestType = typeof(IRequest<>);
         var interfaceType = typeof(TInterface);
@@ -32,19 +32,18 @@ internal sealed class RequestsBuilder(IServiceCollection services, Assembly[] as
             {
                 var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(request.RequestType, request.ResponseType);
                 var implementationType = openBehaviorType.MakeGenericType(request.RequestType, request.ResponseType);
-                services.AddTransient(behaviorType, implementationType);
+                services.Add(new ServiceDescriptor(behaviorType, implementationType, lifetime));
             }
         }
 
         return this;
     }
 
-    public IRequestsBuilder AddBehavior<TRequest, TResponse, TBehavior>()
+    public IRequestsBuilder AddBehavior<TRequest, TResponse, TBehavior>(ServiceLifetime lifetime = ServiceLifetime.Transient)
         where TRequest : IRequest<TResponse>
         where TBehavior : class, IPipelineBehavior<TRequest, TResponse>
     {
-        services.AddTransient<IPipelineBehavior<TRequest, TResponse>, TBehavior>();
-        
+        services.Add(new ServiceDescriptor(typeof(IPipelineBehavior<TRequest, TResponse>), typeof(TBehavior), lifetime));
         return this;
     }
 

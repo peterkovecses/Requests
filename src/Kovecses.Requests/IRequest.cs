@@ -15,10 +15,10 @@ public interface IRequestHandler<in TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
     /// <summary>
-    /// Handles the specified request.
+    /// Handles the specified request asynchronously.
     /// </summary>
     /// <param name="request">The request object.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation, containing the response.</returns>
-    Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken);
+    Task<TResponse> HandleAsync(TRequest request, CancellationToken cancellationToken);
 }

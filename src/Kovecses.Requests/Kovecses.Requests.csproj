@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Kovecses.Requests</AssemblyName>
     <RootNamespace>Kovecses.Requests</RootNamespace>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>Peter Kovecses</Authors>
     <Description>High-performance, "no-magic" light request handling implementation for .NET. Features a stateless pipeline, fluent registration, and direct handler injection for transparent debugging.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

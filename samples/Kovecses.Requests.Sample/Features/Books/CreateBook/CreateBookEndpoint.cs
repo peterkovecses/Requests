@@ -15,7 +15,7 @@ internal static class CreateBookEndpoint
         CancellationToken cancellationToken)
     {
         var command = new CreateBookCommand(request.Title, request.Author, request.Price);
-        var result = await handler.Handle(command, cancellationToken);
+        var result = await handler.HandleAsync(command, cancellationToken);
         
         return Results.Created($"/books/{result.Id}", result);
     }
