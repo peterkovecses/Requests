@@ -16,14 +16,6 @@ Content-Type: application/json
     "price": 20.00
 }
 
-### Update Book Price (Validation Error)
-PATCH {{host}}/books/00000000-0000-0000-0000-000000000000/price
-Content-Type: application/json
-
-{
-    "newPrice": -5.00
-}
-
 ### Create Book (Validation Error)
 POST {{host}}/books
 Content-Type: application/json
@@ -32,4 +24,12 @@ Content-Type: application/json
     "title": "",
     "author": "J.R.R. Tolkien",
     "price": 0
+}
+
+### Update Book Price (Validation Error)
+PATCH {{host}}/books/00000000-0000-0000-0000-000000000000/price
+Content-Type: application/json
+
+{
+    "newPrice": -5.00
 }

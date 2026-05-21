@@ -38,9 +38,12 @@ internal sealed class RequestsBuilder(IServiceCollection services, Assembly[] as
 
         foreach (var request in requestsWithInterface)
         {
-            var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(request.RequestType, request.ResponseType);
-            var implementationType = openBehaviorType.MakeGenericType(request.RequestType, request.ResponseType);
-            services.AddTransient(behaviorType, implementationType);
+            if (CanApplyBehavior(openBehaviorType, request.RequestType, request.ResponseType))
+            {
+                var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(request.RequestType, request.ResponseType);
+                var implementationType = openBehaviorType.MakeGenericType(request.RequestType, request.ResponseType);
+                services.AddTransient(behaviorType, implementationType);
+            }
         }
 
         return this;
@@ -53,5 +56,18 @@ internal sealed class RequestsBuilder(IServiceCollection services, Assembly[] as
         services.AddTransient<IPipelineBehavior<TRequest, TResponse>, TBehavior>();
         
         return this;
+    }
+
+    private static bool CanApplyBehavior(Type openBehaviorType, Type requestType, Type responseType)
+    {
+        try
+        {
+            _ = openBehaviorType.MakeGenericType(requestType, responseType);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
