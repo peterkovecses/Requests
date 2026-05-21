@@ -1,0 +1,66 @@
+name: Publish to NuGet
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          8.0.x
+          9.0.x
+          10.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore -c Release
+
+    - name: Test
+      run: dotnet test --no-build -c Release --verbosity normal
+
+    - name: Pack
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      run: dotnet pack src/Kovecses.Requests/Kovecses.Requests.csproj -c Release -o out
+
+    - name: Push to NuGet
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      run: dotnet nuget push "out/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+
+    - name: Get Version
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      id: get_version
+      run: |
+        VERSION=$(grep '<Version>' src/Kovecses.Requests/Kovecses.Requests.csproj | sed -E 's/.*<Version>(.*)<\/Version>.*/\1/')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Extract Release Notes Section
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      run: |
+        sed '/^---/q' RELEASE_NOTES.md | sed '/^---/d' > RELEASE_NOTES_TEMP.md
+
+    - name: Create GitHub Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ steps.get_version.outputs.version }}
+        name: Release v${{ steps.get_version.outputs.version }}
+        body_path: RELEASE_NOTES_TEMP.md
+        files: out/*.nupkg
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
