@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Reflection;
+using System.Linq.Expressions;
 
 namespace Kovecses.Requests;
 
@@ -32,12 +33,19 @@ public static class ServiceCollectionExtensions
 
             var args = handler.ServiceType.GetGenericArguments();
             var pipelineHandlerType = typeof(PipelineRequestHandler<,>).MakeGenericType(args);
+            var requestType = args[0];
+            var responseType = args[1];
+            var behaviorEnumerableType = typeof(IEnumerable<>).MakeGenericType(
+                typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType));
+
+            var factory = BuildPipelineHandlerFactory(pipelineHandlerType, handler.ServiceType);
 
             services.AddTransient(handler.ServiceType, sp =>
             {
                 var inner = sp.GetRequiredService(handler.ImplementationType);
-
-                return ActivatorUtilities.CreateInstance(sp, pipelineHandlerType, inner);
+                var behaviors = sp.GetService(behaviorEnumerableType);
+                
+                return factory(sp, inner, behaviors);
             });
         }
 
@@ -61,4 +69,30 @@ public static class ServiceCollectionExtensions
     /// <returns>A builder for configuring behaviors.</returns>
     public static IRequestsBuilder AddRequests<TMarker>(this IServiceCollection services)
         => services.AddRequests(typeof(TMarker).Assembly);
+
+    private static dynamic BuildPipelineHandlerFactory(Type pipelineHandlerType, Type handlerServiceType)
+    {
+        var requestType = handlerServiceType.GetGenericArguments()[0];
+        var responseType = handlerServiceType.GetGenericArguments()[1];
+        var behaviorEnumerableType = typeof(IEnumerable<>).MakeGenericType(
+            typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType));
+
+        var spParam = Expression.Parameter(typeof(IServiceProvider), "sp");
+        var innerParam = Expression.Parameter(typeof(object), "inner");
+        var behaviorsParam = Expression.Parameter(typeof(object), "behaviors");
+
+        var inner = Expression.Convert(innerParam, handlerServiceType);
+        var behaviors = Expression.Convert(behaviorsParam, behaviorEnumerableType);
+
+        var constructor = pipelineHandlerType.GetConstructor([handlerServiceType, behaviorEnumerableType]);
+        var newInstance = Expression.New(constructor!, inner, behaviors);
+
+        var lambda = Expression.Lambda<Func<IServiceProvider, object, object, object>>(
+            Expression.Convert(newInstance, typeof(object)),
+            spParam,
+            innerParam,
+            behaviorsParam);
+
+        return lambda.Compile();
+    }
 }

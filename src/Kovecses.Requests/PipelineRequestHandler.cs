@@ -6,7 +6,8 @@ internal sealed class PipelineRequestHandler<TRequest, TResponse>(
     : IRequestHandler<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    private readonly IPipelineBehavior<TRequest, TResponse>[] _behaviors = [.. behaviors];
+    private readonly IPipelineBehavior<TRequest, TResponse>[] _behaviors =
+        behaviors as IPipelineBehavior<TRequest, TResponse>[] ?? [.. behaviors];
 
     public Task<TResponse> HandleAsync(TRequest request, CancellationToken cancellationToken)
     {

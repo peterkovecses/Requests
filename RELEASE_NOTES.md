@@ -1,3 +1,16 @@
+# Release Notes - Kovecses.Requests 1.2.0
+
+## Performance Improvements
+- **IEnumerable Casting Optimization:** Replaced collection expression `[.. behaviors]` with smart casting using `as` operator to avoid unnecessary array allocations. The Microsoft DI container returns `T[]` directly in 99% of cases, resulting in **zero allocations** through direct reference reuse.
+- **Expression Tree Factory Optimization:** Replaced `ActivatorUtilities.CreateFactory` with strongly-typed Expression tree compiled delegates, eliminating `object[]` parameter array allocations on every request.
+
+### Benchmark Results
+- **Simple Request:** 20.7% faster (60.5 ns vs 76.3 ns), 16% less allocation (168 B vs 200 B)
+- **Pipeline (2 Behaviors):** 18.8% faster (148.7 ns vs 183.0 ns), 10% less allocation (624 B vs 696 B)
+- **Now outperforms MediatR** by 18% in pipeline scenarios
+
+---
+
 # Release Notes - Kovecses.Requests 1.1.0
 
 ## Breaking Changes

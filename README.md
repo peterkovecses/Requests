@@ -45,7 +45,7 @@ public record GetBooksQuery : IRequest<IEnumerable<BookDto>>;
 internal sealed class GetBooksHandler(IBookRepository repository) 
     : IRequestHandler<GetBooksQuery, IEnumerable<BookDto>>
 {
-    public Task<IEnumerable<BookDto>> Handle(GetBooksQuery request, CancellationToken cancellationToken)
+    public Task<IEnumerable<BookDto>> HandleAsync(GetBooksQuery request, CancellationToken cancellationToken)
         => repository.GetAllAsync(cancellationToken);
 }
 ```
@@ -57,7 +57,7 @@ app.MapGet("books", async (
     IRequestHandler<GetBooksQuery, IEnumerable<BookDto>> handler,
     CancellationToken cancellationToken) =>
 {
-    var result = await handler.Handle(new GetBooksQuery(), cancellationToken);
+    var result = await handler.HandleAsync(new GetBooksQuery(), cancellationToken);
     
     return Results.Ok(result);
 });
@@ -73,10 +73,10 @@ The `IRequestsBuilder` provides a fluent API to register your handlers and cross
 ```csharp
 builder.Services.AddRequests<Program>()
     // 1. Global Behavior: Applies to EVERY request
-    .AddGlobalBehavior(typeof(LoggingBehavior<,>))
+    .AddGlobalBehavior(typeof(LoggingBehavior<,>), ServiceLifetime.Singleton)
     
     // 2. Interface-based Behavior: Applies only to requests implementing IValidatable
-    .AddBehavior<IValidatable>(typeof(ValidationBehavior<,>))
+    .AddBehavior<IValidatable>(typeof(ValidationBehavior<,>), ServiceLifetime.Scoped)
     
     // 3. Explicit Behavior: Applies ONLY to this specific request
     .AddBehavior<GetBooksQuery, IEnumerable<BookDto>, ActiveOnlyBehavior>();
@@ -88,7 +88,7 @@ public class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior<TReque
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    public async Task<TResponse> Handle(
+    public async Task<TResponse> HandleAsync(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
@@ -104,6 +104,36 @@ public class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior<TReque
     }
 }
 ```
+
+---
+
+## Benchmarks
+
+The following benchmarks compare **Kovecses.Requests** with **MediatR** using **BenchmarkDotNet**. 
+
+*Environment: .NET 10.0.1, macOS 26.5 (Darwin 25.5.0), Apple M1*
+
+> **Disclaimer:** This comparison is not "apples-to-apples" in terms of features. MediatR is a feature-rich library with a central dispatcher and dynamic resolution. Kovecses.Requests intentionally opts for direct injection and native DI resolution. These benchmarks illustrate the **"infrastructure tax"** (runtime overhead) you can avoid by choosing a no-magic, direct-injection approach.
+
+### Simple Request/Response
+Measures resolving a handler from DI and executing it.
+
+| Method           | Mean       | Ratio | Allocated |
+|----------------- |-----------:|------:|----------:|
+| DirectCall       |   8.031 ns |  1.00 |      72 B |
+| KovecsesRequests |  60.533 ns |  7.54 |     168 B |
+| MediatR          |  81.411 ns | 10.14 |     200 B |
+
+### Pipeline (2 Behaviors)
+Measures resolving a handler with a pipeline (2 behaviors) and executing it.
+
+| Method                          | Mean       | Ratio | Allocated |
+|-------------------------------- |-----------:|------:|----------:|
+| DirectCall                      |   8.074 ns |  1.00 |      72 B |
+| KovecsesRequests_With2Behaviors | 148.723 ns | 18.43 |     624 B |
+| MediatR_With2Behaviors          | 182.772 ns | 22.65 |     728 B |
+
+*Note: In these updated benchmarks, `KovecsesRequests` includes manual DI resolution (`GetRequiredService`) to accurately reflect the overhead in a real-world Minimal API endpoint.*
 
 ---
 
