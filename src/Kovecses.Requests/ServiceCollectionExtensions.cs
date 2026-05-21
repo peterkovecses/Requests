@@ -35,6 +35,12 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    public static IServiceCollection AddRequests(this IServiceCollection services, params Type[] handlerAssemblyMarkerTypes)
+        => services.AddRequests(handlerAssemblyMarkerTypes.Select(t => t.Assembly).ToArray());
+
+    public static IServiceCollection AddRequests<TMarker>(this IServiceCollection services)
+        => services.AddRequests(typeof(TMarker).Assembly);
+
     public static IServiceCollection AddBehavior<TBehavior, TRequest, TResponse>(this IServiceCollection services)
         where TBehavior : class, IPipelineBehavior<TRequest, TResponse>
         where TRequest : IRequest<TResponse>

@@ -1,4 +1,4 @@
-global using Kovecses.Requests;
+global using Kovecses.Requests.Sample;
 global using Kovecses.Requests.Sample.Common.ErrorHandling;
 global using Kovecses.Requests.Sample.Common.Extensions;
 global using Kovecses.Requests.Sample.Common.Logging;
