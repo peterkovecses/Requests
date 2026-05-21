@@ -11,17 +11,36 @@ public static class ServiceCollectionExtensions
         var handlerType = typeof(IRequestHandler<,>);
 
         var handlers = assemblies
-            .SelectMany(a => a.GetTypes())
-            .Where(t => t is { IsClass: true, IsAbstract: false })
-            .SelectMany(t => t.GetInterfaces()
-                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == handlerType)
-                .Select(i => new { ServiceType = i, ImplementationType = t }));
+            .SelectMany(assembly => assembly.GetTypes())
+            .Where(type => type is { IsClass: true, IsAbstract: false })
+            .SelectMany(type => type.GetInterfaces()
+                .Where(interfaceType => interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == handlerType)
+                .Select(interfaceType => new { ServiceType = interfaceType, ImplementationType = type }));
 
         foreach (var handler in handlers)
         {
-            services.TryAddTransient(handler.ServiceType, handler.ImplementationType);
+            services.TryAddTransient(handler.ImplementationType);
+
+            var args = handler.ServiceType.GetGenericArguments();
+            var pipelineHandlerType = typeof(PipelineRequestHandler<,>).MakeGenericType(args);
+
+            services.AddTransient(handler.ServiceType, sp =>
+            {
+                var inner = sp.GetRequiredService(handler.ImplementationType);
+
+                return ActivatorUtilities.CreateInstance(sp, pipelineHandlerType, inner);
+            });
         }
 
+        return services;
+    }
+
+    public static IServiceCollection AddBehavior<TBehavior, TRequest, TResponse>(this IServiceCollection services)
+        where TBehavior : class, IPipelineBehavior<TRequest, TResponse>
+        where TRequest : IRequest<TResponse>
+    {
+        services.AddTransient<IPipelineBehavior<TRequest, TResponse>, TBehavior>();
+        
         return services;
     }
 }
