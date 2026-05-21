@@ -3,5 +3,5 @@ namespace Kovecses.Requests.Sample.Features.Books.GetBooks;
 internal sealed class GetBooksHandler(IBookRepository repository) : IRequestHandler<GetBooksQuery, IEnumerable<BookDto>>
 {
     public Task<IEnumerable<BookDto>> Handle(GetBooksQuery request, CancellationToken cancellationToken)
-        => Task.FromResult(repository.GetAll());
+        => repository.GetAllAsync(cancellationToken);
 }

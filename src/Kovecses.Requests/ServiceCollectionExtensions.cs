@@ -6,7 +6,7 @@ namespace Kovecses.Requests;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddRequests(this IServiceCollection services, params Assembly[] assemblies)
+    public static IRequestsBuilder AddRequests(this IServiceCollection services, params Assembly[] assemblies)
     {
         var handlerType = typeof(IRequestHandler<,>);
 
@@ -32,21 +32,12 @@ public static class ServiceCollectionExtensions
             });
         }
 
-        return services;
+        return new RequestsBuilder(services, assemblies);
     }
 
-    public static IServiceCollection AddRequests(this IServiceCollection services, params Type[] handlerAssemblyMarkerTypes)
+    public static IRequestsBuilder AddRequests(this IServiceCollection services, params Type[] handlerAssemblyMarkerTypes)
         => services.AddRequests(handlerAssemblyMarkerTypes.Select(t => t.Assembly).ToArray());
 
-    public static IServiceCollection AddRequests<TMarker>(this IServiceCollection services)
+    public static IRequestsBuilder AddRequests<TMarker>(this IServiceCollection services)
         => services.AddRequests(typeof(TMarker).Assembly);
-
-    public static IServiceCollection AddBehavior<TBehavior, TRequest, TResponse>(this IServiceCollection services)
-        where TBehavior : class, IPipelineBehavior<TRequest, TResponse>
-        where TRequest : IRequest<TResponse>
-    {
-        services.AddTransient<IPipelineBehavior<TRequest, TResponse>, TBehavior>();
-        
-        return services;
-    }
 }

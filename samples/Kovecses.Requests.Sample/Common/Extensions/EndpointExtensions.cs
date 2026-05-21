@@ -6,6 +6,7 @@ public static class EndpointExtensions
     {
         GetBooksEndpoint.MapEndpoint(app);
         CreateBookEndpoint.MapEndpoint(app);
+        UpdatePriceEndpoint.MapEndpoint(app);
 
         return app;
     }
