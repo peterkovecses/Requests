@@ -37,6 +37,8 @@ dotnet add package Kovecses.Requests
 
 ### 1. Define Request and Response
 ```csharp
+using Kovecses.Requests;
+
 public record GetBooksQuery : IRequest<IEnumerable<BookDto>>;
 ```
 
@@ -50,7 +52,13 @@ internal sealed class GetBooksHandler(IBookRepository repository)
 }
 ```
 
-### 3. Inject and Use in Minimal API
+### 3. Register Services in Startup
+```csharp
+// In Program.cs or Startup configuration
+builder.Services.AddRequests<Program>();  // Scans assemblies and registers handlers
+```
+
+### 4. Inject and Use in Minimal API
 ```csharp
 // Direct injection of the handler - clean, fast, and F12-able!
 app.MapGet("books", async (
@@ -75,12 +83,15 @@ builder.Services.AddRequests<Program>()
     // 1. Global Behavior: Applies to EVERY request
     .AddGlobalBehavior(typeof(LoggingBehavior<,>), ServiceLifetime.Singleton)
     
-    // 2. Interface-based Behavior: Applies only to requests implementing IValidatable
+    // 2. Interface-based Behavior: Applies only to requests implementing IValidatable marker interface
+    // Example: public record UpdateBookCommand : IRequest<BookDto>, IValidatable;
     .AddBehavior<IValidatable>(typeof(ValidationBehavior<,>), ServiceLifetime.Scoped)
     
-    // 3. Explicit Behavior: Applies ONLY to this specific request
+    // 3. Explicit Behavior: Applies ONLY to this specific request (default: Transient)
     .AddBehavior<GetBooksQuery, IEnumerable<BookDto>, ActiveOnlyBehavior>();
 ```
+
+> **Note:** `ServiceLifetime` parameter is optional for all methods and defaults to `Transient`. Only specify it explicitly if you need `Scoped` or `Singleton` behavior.
 
 ### Example Behavior Implementation
 ```csharp
