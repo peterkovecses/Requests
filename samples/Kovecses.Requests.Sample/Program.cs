@@ -14,7 +14,6 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
 app.UseExceptionHandler();
-GetBooksEndpoint.MapEndpoint(app);
-CreateBookEndpoint.MapEndpoint(app);
+app.MapEndpoints();
 
 app.Run();

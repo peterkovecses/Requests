@@ -1,5 +1,6 @@
 global using Kovecses.Requests;
 global using Kovecses.Requests.Sample.Common.ErrorHandling;
+global using Kovecses.Requests.Sample.Common.Extensions;
 global using Kovecses.Requests.Sample.Common.Logging;
 global using Kovecses.Requests.Sample.Common.Validation;
 global using Kovecses.Requests.Sample.Features.Books;
