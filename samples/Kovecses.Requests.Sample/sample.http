@@ -5,3 +5,23 @@
 ### Get Books
 GET {{host}}/books
 Accept: application/json
+
+### Create Book
+POST {{host}}/books
+Content-Type: application/json
+
+{
+    "title": "The Hobbit",
+    "author": "J.R.R. Tolkien",
+    "price": 20.00
+}
+
+### Create Book (Validation Error)
+POST {{host}}/books
+Content-Type: application/json
+
+{
+    "title": "",
+    "author": "J.R.R. Tolkien",
+    "price": 0
+}

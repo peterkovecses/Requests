@@ -1,5 +1,10 @@
 global using Kovecses.Requests;
+global using Kovecses.Requests.Sample.Common.ErrorHandling;
 global using Kovecses.Requests.Sample.Common.Logging;
+global using Kovecses.Requests.Sample.Common.Validation;
 global using Kovecses.Requests.Sample.Features.Books;
 global using Kovecses.Requests.Sample.Features.Books.GetBooks;
+global using Kovecses.Requests.Sample.Features.Books.CreateBook;
 global using System.Diagnostics;
+global using Microsoft.AspNetCore.Diagnostics;
+global using Microsoft.AspNetCore.Mvc;
