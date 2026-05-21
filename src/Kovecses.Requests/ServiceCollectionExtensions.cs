@@ -4,8 +4,17 @@ using System.Reflection;
 
 namespace Kovecses.Requests;
 
+/// <summary>
+/// Provides extension methods for registering request handlers and behaviors.
+/// </summary>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Registers all request handlers from the specified assemblies.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="assemblies">The assemblies to scan for handlers.</param>
+    /// <returns>A builder for configuring behaviors.</returns>
     public static IRequestsBuilder AddRequests(this IServiceCollection services, params Assembly[] assemblies)
     {
         var handlerType = typeof(IRequestHandler<,>);
@@ -35,9 +44,21 @@ public static class ServiceCollectionExtensions
         return new RequestsBuilder(services, assemblies);
     }
 
+    /// <summary>
+    /// Registers all request handlers from the assemblies containing the specified marker types.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="handlerAssemblyMarkerTypes">The marker types used to identify the assemblies.</param>
+    /// <returns>A builder for configuring behaviors.</returns>
     public static IRequestsBuilder AddRequests(this IServiceCollection services, params Type[] handlerAssemblyMarkerTypes)
         => services.AddRequests(handlerAssemblyMarkerTypes.Select(t => t.Assembly).ToArray());
 
+    /// <summary>
+    /// Registers all request handlers from the assembly containing the specified marker type.
+    /// </summary>
+    /// <typeparam name="TMarker">The marker type used to identify the assembly.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <returns>A builder for configuring behaviors.</returns>
     public static IRequestsBuilder AddRequests<TMarker>(this IServiceCollection services)
         => services.AddRequests(typeof(TMarker).Assembly);
 }

@@ -3,16 +3,6 @@ using System.Reflection;
 
 namespace Kovecses.Requests;
 
-public interface IRequestsBuilder
-{
-    IServiceCollection Services { get; }
-    IRequestsBuilder AddGlobalBehavior(Type openBehaviorType);
-    IRequestsBuilder AddBehavior<TInterface>(Type openBehaviorType);
-    IRequestsBuilder AddBehavior<TRequest, TResponse, TBehavior>()
-        where TRequest : IRequest<TResponse>
-        where TBehavior : class, IPipelineBehavior<TRequest, TResponse>;
-}
-
 internal sealed class RequestsBuilder(IServiceCollection services, Assembly[] assemblies) : IRequestsBuilder
 {
     public IServiceCollection Services => services;
