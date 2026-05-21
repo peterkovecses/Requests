@@ -1,6 +1,7 @@
 var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
+builder.Services.AddRequests(typeof(Program).Assembly);
 
-app.MapGet("/", () => "Hello World!");
+var app = builder.Build();
+GetBooksEndpoint.MapEndpoint(app);
 
 app.Run();

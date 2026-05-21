@@ -1,0 +1,7 @@
+@hostname = localhost
+@port = 5000
+@host = http://{{hostname}}:{{port}}
+
+### Get Books
+GET {{host}}/books
+Accept: application/json
