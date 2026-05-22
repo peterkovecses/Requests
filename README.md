@@ -17,7 +17,7 @@ If you find this library useful, please give it a **star** on GitHub! It helps m
 
 Kovecses.Requests was built with a clear focus on three main goals:
 
-1.  **High Performance:** Optimized execution path with minimal allocations. Everything is resolved by the native .NET DI container at startup.
+1.  **High Performance:** Optimized execution path with pre-compiled factories and native .NET DI resolution during injection.
 2.  **No Magic / Transparent Debugging:** Direct handler injection. No "invisible" dispatchers or runtime reflection during execution. If you want to see the implementation, just press `F12` on the handler in your endpoint.
 3.  **Clean Architecture with Pipeline Support:** Benefit from decoupled cross-cutting concerns (like logging and validation) via a stateless pipeline implementation that fully supports advanced scenarios like **Retry policies** (Polly) and recovery logic.
 
@@ -69,6 +69,17 @@ app.MapGet("books", async (
     
     return Results.Ok(result);
 });
+```
+
+---
+
+## Usage in Background Services
+
+When injecting handlers into Singleton services (like `BackgroundService`), always use `IServiceScopeFactory` to resolve the handler within a new scope. This prevents captive dependencies and ensures the Transient pipeline behaves correctly.
+
+```csharp
+using var scope = scopeFactory.CreateScope();
+var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<MyRequest, MyResponse>>();
 ```
 
 ---
