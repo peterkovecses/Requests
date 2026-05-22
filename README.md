@@ -91,12 +91,24 @@ The `IRequestsBuilder` provides a fluent API to register your handlers and cross
 ### OpenTelemetry & Distributed Tracing
 Monitoring and observability are essential for modern cloud-native applications. Kovecses.Requests provides built-in support for OpenTelemetry via an optional behavior.
 
+1. **Enable the behavior:**
 ```csharp
 builder.Services.AddRequests<Program>()
     .AddOpenTelemetry(); // Enables ActivitySource-based tracing for all requests
 ```
 
-This registers a global `OpenTelemetryBehavior` that automatically starts an `Activity` for each request. It captures the request type and handles exception reporting. The tracing uses the `Kovecses.Requests` ActivitySource name.
+2. **Configure OpenTelemetry to collect the traces:**
+To actually see the traces, you must register the `Kovecses.Requests` source in your OpenTelemetry configuration:
+
+```csharp
+services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing
+        .AddSource("Kovecses.Requests") // <-- Required to collect library traces
+        .AddAspNetCoreInstrumentation()
+        .AddConsoleExporter());
+```
+
+This registers a global `OpenTelemetryBehavior` that automatically starts an `Activity` for each request. It captures the request type and handles exception reporting.
 
 ### Registration Options
 ```csharp
