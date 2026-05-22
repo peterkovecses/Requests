@@ -45,7 +45,7 @@ public static class ServiceCollectionExtensions
                 var inner = sp.GetRequiredService(handler.ImplementationType);
                 var behaviors = sp.GetService(behaviorEnumerableType);
                 
-                return factory(sp, inner, behaviors);
+                return factory(inner, behaviors);
             });
         }
 
@@ -77,7 +77,6 @@ public static class ServiceCollectionExtensions
         var behaviorEnumerableType = typeof(IEnumerable<>).MakeGenericType(
             typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType));
 
-        var spParam = Expression.Parameter(typeof(IServiceProvider), "sp");
         var innerParam = Expression.Parameter(typeof(object), "inner");
         var behaviorsParam = Expression.Parameter(typeof(object), "behaviors");
 
@@ -87,9 +86,8 @@ public static class ServiceCollectionExtensions
         var constructor = pipelineHandlerType.GetConstructor([handlerServiceType, behaviorEnumerableType]);
         var newInstance = Expression.New(constructor!, inner, behaviors);
 
-        var lambda = Expression.Lambda<Func<IServiceProvider, object, object, object>>(
+        var lambda = Expression.Lambda<Func<object, object, object>>(
             Expression.Convert(newInstance, typeof(object)),
-            spParam,
             innerParam,
             behaviorsParam);
 
