@@ -7,14 +7,14 @@ internal sealed class RequestsBuilder(IServiceCollection services, Assembly[] as
 {
     public IServiceCollection Services => services;
 
-    public IRequestsBuilder AddGlobalBehavior(Type openBehaviorType, ServiceLifetime lifetime = ServiceLifetime.Transient)
+    public IRequestsBuilder AddGlobalBehavior(Type openBehaviorType)
     {
-        services.Add(new ServiceDescriptor(typeof(IPipelineBehavior<,>), openBehaviorType, lifetime));
+        services.Add(new ServiceDescriptor(typeof(IPipelineBehavior<,>), openBehaviorType, ServiceLifetime.Transient));
         
         return this;
     }
 
-    public IRequestsBuilder AddBehavior<TInterface>(Type openBehaviorType, ServiceLifetime lifetime = ServiceLifetime.Transient)
+    public IRequestsBuilder AddBehavior<TInterface>(Type openBehaviorType)
     {
         var requestType = typeof(IRequest<>);
         var interfaceType = typeof(TInterface);
@@ -32,18 +32,18 @@ internal sealed class RequestsBuilder(IServiceCollection services, Assembly[] as
             {
                 var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(request.RequestType, request.ResponseType);
                 var implementationType = openBehaviorType.MakeGenericType(request.RequestType, request.ResponseType);
-                services.Add(new ServiceDescriptor(behaviorType, implementationType, lifetime));
+                services.Add(new ServiceDescriptor(behaviorType, implementationType, ServiceLifetime.Transient));
             }
         }
 
         return this;
     }
 
-    public IRequestsBuilder AddBehavior<TRequest, TResponse, TBehavior>(ServiceLifetime lifetime = ServiceLifetime.Transient)
+    public IRequestsBuilder AddBehavior<TRequest, TResponse, TBehavior>()
         where TRequest : IRequest<TResponse>
         where TBehavior : class, IPipelineBehavior<TRequest, TResponse>
     {
-        services.Add(new ServiceDescriptor(typeof(IPipelineBehavior<TRequest, TResponse>), typeof(TBehavior), lifetime));
+        services.Add(new ServiceDescriptor(typeof(IPipelineBehavior<TRequest, TResponse>), typeof(TBehavior), ServiceLifetime.Transient));
         return this;
     }
 

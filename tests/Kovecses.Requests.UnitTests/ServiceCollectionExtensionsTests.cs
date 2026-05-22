@@ -27,23 +27,20 @@ public class ServiceCollectionExtensionsTests
         Assert.NotNull(descriptor);
     }
 
-    [Theory]
-    [InlineData(ServiceLifetime.Transient)]
-    [InlineData(ServiceLifetime.Scoped)]
-    [InlineData(ServiceLifetime.Singleton)]
-    public void AddBehavior_WithLifetime_ShouldRespectLifetime(ServiceLifetime lifetime)
+    [Fact]
+    public void AddBehavior_ShouldRegisterAsTransient()
     {
         // Arrange
         var services = new ServiceCollection();
         var builder = services.AddRequests<ServiceCollectionExtensionsTests>();
 
         // Act
-        builder.AddGlobalBehavior(typeof(TestBehavior<,>), lifetime);
+        builder.AddGlobalBehavior(typeof(TestBehavior<,>));
 
         // Assert
         var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IPipelineBehavior<,>));
         Assert.NotNull(descriptor);
-        Assert.Equal(lifetime, descriptor.Lifetime);
+        Assert.Equal(ServiceLifetime.Transient, descriptor.Lifetime);
     }
 }
 

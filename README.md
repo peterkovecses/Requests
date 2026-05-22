@@ -81,17 +81,17 @@ The `IRequestsBuilder` provides a fluent API to register your handlers and cross
 ```csharp
 builder.Services.AddRequests<Program>()
     // 1. Global Behavior: Applies to EVERY request
-    .AddGlobalBehavior(typeof(LoggingBehavior<,>), ServiceLifetime.Singleton)
+    .AddGlobalBehavior(typeof(LoggingBehavior<,>))
     
     // 2. Interface-based Behavior: Applies only to requests implementing IValidatable marker interface
     // Example: public record UpdateBookCommand : IRequest<BookDto>, IValidatable;
-    .AddBehavior<IValidatable>(typeof(ValidationBehavior<,>), ServiceLifetime.Scoped)
+    .AddBehavior<IValidatable>(typeof(ValidationBehavior<,>))
     
-    // 3. Explicit Behavior: Applies ONLY to this specific request (default: Transient)
+    // 3. Explicit Behavior: Applies ONLY to this specific request
     .AddBehavior<GetBooksQuery, IEnumerable<BookDto>, ActiveOnlyBehavior>();
 ```
 
-> **Note:** `ServiceLifetime` parameter is optional for all methods and defaults to `Transient`. Only specify it explicitly if you need `Scoped` or `Singleton` behavior.
+> **Note:** All behaviors are registered with **Transient** lifetime to ensure thread safety and avoid accidental state sharing in the pipeline. This also optimizes performance as the DI container can resolve them efficiently.
 
 ### Example Behavior Implementation
 ```csharp

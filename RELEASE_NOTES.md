@@ -1,3 +1,11 @@
+# Release Notes - Kovecses.Requests 2.0.0
+
+## Breaking Changes
+- **Simplified Behavior Registration:** Removed the ability to specify `ServiceLifetime` for pipeline behaviors. All behaviors are now strictly registered as `Transient`. 
+  - **Reasoning:** This ensures better thread safety, prevents accidental state sharing between requests, and simplifies the internal registration logic. From a performance perspective, transient registration is well-optimized in the native .NET DI container.
+
+---
+
 # Release Notes - Kovecses.Requests 1.2.0
 
 ## Performance Improvements
