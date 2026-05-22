@@ -88,6 +88,16 @@ var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<MyRequest
 
 The `IRequestsBuilder` provides a fluent API to register your handlers and cross-cutting concerns (behaviors).
 
+### OpenTelemetry & Distributed Tracing
+Monitoring and observability are essential for modern cloud-native applications. Kovecses.Requests provides built-in support for OpenTelemetry via an optional behavior.
+
+```csharp
+builder.Services.AddRequests<Program>()
+    .AddOpenTelemetry(); // Enables ActivitySource-based tracing for all requests
+```
+
+This registers a global `OpenTelemetryBehavior` that automatically starts an `Activity` for each request. It captures the request type and handles exception reporting. The tracing uses the `Kovecses.Requests` ActivitySource name.
+
 ### Registration Options
 ```csharp
 builder.Services.AddRequests<Program>()

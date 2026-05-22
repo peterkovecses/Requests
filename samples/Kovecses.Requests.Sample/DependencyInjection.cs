@@ -9,9 +9,17 @@ public static class DependencyInjection
         services.AddScoped<IValidator<UpdatePriceCommand>, UpdatePriceCommandValidator>();
 
         services.AddRequests<Program>()
+            .AddOpenTelemetry()
             .AddGlobalBehavior(typeof(LoggingBehavior<,>))
             .AddBehavior<IValidatable>(typeof(ValidationBehavior<,>))
             .AddBehavior<GetBooksQuery, IEnumerable<BookDto>, ActiveOnlyBehavior>();
+
+        services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService("Kovecses.Requests.Sample"))
+            .WithTracing(tracing => tracing
+                .AddSource("Kovecses.Requests")
+                .AddAspNetCoreInstrumentation()
+                .AddConsoleExporter());
 
         services.AddProblemDetails();
         services.AddExceptionHandler<ValidationExceptionHandler>();

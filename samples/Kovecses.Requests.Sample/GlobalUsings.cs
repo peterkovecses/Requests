@@ -12,3 +12,5 @@ global using Kovecses.Requests.Sample.Features.Books.UpdatePrice;
 global using System.Diagnostics;
 global using Microsoft.AspNetCore.Diagnostics;
 global using Microsoft.AspNetCore.Mvc;
+global using OpenTelemetry.Resources;
+global using OpenTelemetry.Trace;

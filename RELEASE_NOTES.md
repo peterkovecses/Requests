@@ -1,3 +1,14 @@
+# Release Notes - Kovecses.Requests 2.2.0
+
+## New Features
+- **OpenTelemetry Support:** Added optional, built-in support for distributed tracing.
+  - New `AddOpenTelemetry()` extension method for `IRequestsBuilder`.
+  - Automatic `Activity` creation for every request using `Kovecses.Requests` source.
+  - Exception capturing and error status reporting within the tracing behavior.
+  - Zero performance impact for users who don't enable it (completely optional behavior).
+
+---
+
 # Release Notes - Kovecses.Requests 2.1.0
 
 ## Performance Improvements
