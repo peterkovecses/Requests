@@ -16,16 +16,15 @@ internal sealed class PipelineRequestHandler<TRequest, TResponse>(
             return inner.HandleAsync(request, cancellationToken);
         }
 
-        RequestHandlerDelegate<TResponse> GetNextDelegate(int currentIndex)
-        {
-            if (currentIndex >= _behaviors.Length)
-            {
-                return () => inner.HandleAsync(request, cancellationToken);
-            }
+        RequestHandlerDelegate<TResponse> next = () => inner.HandleAsync(request, cancellationToken);
 
-            return () => _behaviors[currentIndex].HandleAsync(request, GetNextDelegate(currentIndex + 1), cancellationToken);
+        for (int i = _behaviors.Length - 1; i >= 0; i--)
+        {
+            var behavior = _behaviors[i];
+            var nextDelegate = next;
+            next = () => behavior.HandleAsync(request, nextDelegate, cancellationToken);
         }
 
-        return GetNextDelegate(0)();
+        return next();
     }
 }

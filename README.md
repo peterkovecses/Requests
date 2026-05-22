@@ -131,18 +131,18 @@ Measures resolving a handler from DI and executing it.
 
 | Method           | Mean       | Ratio | Allocated |
 |----------------- |-----------:|------:|----------:|
-| DirectCall       |   8.031 ns |  1.00 |      72 B |
-| KovecsesRequests |  60.533 ns |  7.54 |     168 B |
-| MediatR          |  81.411 ns | 10.14 |     200 B |
+| DirectCall       |   8.020 ns |  1.00 |      72 B |
+| KovecsesRequests |  59.510 ns |  7.42 |     168 B |
+| MediatR          |  83.572 ns | 10.42 |     200 B |
 
 ### Pipeline (2 Behaviors)
 Measures resolving a handler with a pipeline (2 behaviors) and executing it.
 
 | Method                          | Mean       | Ratio | Allocated |
 |-------------------------------- |-----------:|------:|----------:|
-| DirectCall                      |   8.074 ns |  1.00 |      72 B |
-| KovecsesRequests_With2Behaviors | 148.723 ns | 18.43 |     624 B |
-| MediatR_With2Behaviors          | 182.772 ns | 22.65 |     728 B |
+| DirectCall                      |   7.986 ns |  1.00 |      72 B |
+| KovecsesRequests_With2Behaviors | 141.697 ns | 17.75 |     672 B |
+| MediatR_With2Behaviors          | 180.950 ns | 22.66 |     728 B |
 
 *Note: In these updated benchmarks, `KovecsesRequests` includes manual DI resolution (`GetRequiredService`) to accurately reflect the overhead in a real-world Minimal API endpoint.*
 
