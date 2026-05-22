@@ -144,7 +144,7 @@ Measures resolving a handler with a pipeline (2 behaviors) and executing it.
 | KovecsesRequests_With2Behaviors | 139.493 ns | 17.56 |     672 B |
 | MediatR_With2Behaviors          | 181.233 ns | 22.82 |     728 B |
 
-*Note: In these updated benchmarks, `KovecsesRequests` includes manual DI resolution (`GetRequiredService`) to accurately reflect the overhead in a real-world Minimal API endpoint.*
+*Note: In these benchmarks, `KovecsesRequests` includes manual DI resolution (`GetRequiredService`) to accurately reflect the overhead in a real-world Minimal API endpoint.*
 
 ---
 

@@ -1,3 +1,11 @@
+# Release Notes - Kovecses.Requests 2.1.0
+
+## Performance Improvements
+- **DI Factory Optimization:** Optimized the internal compiled Expression tree factory by removing an unused `IServiceProvider` parameter. This reduces delegate signature overhead during handler resolution.
+- **Micro-benchmarks:** Achieved an additional 1.5-2.2% reduction in request handling overhead.
+
+---
+
 # Release Notes - Kovecses.Requests 2.0.0
 
 ## Breaking Changes
