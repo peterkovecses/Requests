@@ -38,12 +38,12 @@ public static class ServiceCollectionExtensions
             var behaviorEnumerableType = typeof(IEnumerable<>).MakeGenericType(
                 typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType));
 
-            var factory = BuildPipelineHandlerFactory(pipelineHandlerType, handler.ServiceType);
+            var factory = BuildPipelineHandlerFactory(pipelineHandlerType, handler.ServiceType, behaviorEnumerableType);
 
             services.AddTransient(handler.ServiceType, sp =>
             {
                 var inner = sp.GetRequiredService(handler.ImplementationType);
-                var behaviors = sp.GetService(behaviorEnumerableType);
+                var behaviors = sp.GetRequiredService(behaviorEnumerableType);
                 
                 return factory(inner, behaviors);
             });
@@ -70,13 +70,11 @@ public static class ServiceCollectionExtensions
     public static IRequestsBuilder AddRequests<TMarker>(this IServiceCollection services)
         => services.AddRequests(typeof(TMarker).Assembly);
 
-    private static dynamic BuildPipelineHandlerFactory(Type pipelineHandlerType, Type handlerServiceType)
+    private static Func<object, object, object> BuildPipelineHandlerFactory(
+        Type pipelineHandlerType,
+        Type handlerServiceType,
+        Type behaviorEnumerableType)
     {
-        var requestType = handlerServiceType.GetGenericArguments()[0];
-        var responseType = handlerServiceType.GetGenericArguments()[1];
-        var behaviorEnumerableType = typeof(IEnumerable<>).MakeGenericType(
-            typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType));
-
         var innerParam = Expression.Parameter(typeof(object), "inner");
         var behaviorsParam = Expression.Parameter(typeof(object), "behaviors");
 

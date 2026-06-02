@@ -155,7 +155,7 @@ public class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior<TReque
 
 The following benchmarks compare **Kovecses.Requests** with **MediatR** using **BenchmarkDotNet**. 
 
-*Environment: .NET 10.0.1, macOS 26.5 (Darwin 25.5.0), Apple M1*
+*Environment: .NET 10.0.1, macOS 26.6 (Darwin 25.6.0), Apple M1*
 
 > **Disclaimer:** This comparison is not "apples-to-apples" in terms of features. MediatR is a feature-rich library with a central dispatcher and dynamic resolution. Kovecses.Requests intentionally opts for direct injection and native DI resolution. These benchmarks illustrate the **"infrastructure tax"** (runtime overhead) you can avoid by choosing a no-magic, direct-injection approach.
 
@@ -164,18 +164,18 @@ Measures resolving a handler from DI and executing it.
 
 | Method           | Mean       | Ratio | Allocated |
 |----------------- |-----------:|------:|----------:|
-| DirectCall       |   8.003 ns |  1.00 |      72 B |
-| KovecsesRequests |  58.223 ns |  7.28 |     168 B |
-| MediatR          |  81.347 ns | 10.17 |     200 B |
+| DirectCall       |   7.831 ns |  1.00 |      72 B |
+| KovecsesRequests |  56.332 ns |  7.19 |     168 B |
+| MediatR          |  81.454 ns | 10.40 |     200 B |
 
 ### Pipeline (2 Behaviors)
 Measures resolving a handler with a pipeline (2 behaviors) and executing it.
 
 | Method                          | Mean       | Ratio | Allocated |
 |-------------------------------- |-----------:|------:|----------:|
-| DirectCall                      |   7.944 ns |  1.00 |      72 B |
-| KovecsesRequests_With2Behaviors | 139.493 ns | 17.56 |     672 B |
-| MediatR_With2Behaviors          | 181.233 ns | 22.82 |     728 B |
+| DirectCall                      |   8.155 ns |  1.00 |      72 B |
+| KovecsesRequests_With2Behaviors | 139.091 ns | 17.06 |     672 B |
+| MediatR_With2Behaviors          | 177.913 ns | 21.82 |     728 B |
 
 *Note: In these benchmarks, `KovecsesRequests` includes manual DI resolution (`GetRequiredService`) to accurately reflect the overhead in a real-world Minimal API endpoint.*
 

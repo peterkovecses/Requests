@@ -1,3 +1,16 @@
+# Release Notes - Kovecses.Requests 2.3.0
+
+## Performance Improvements
+- **Dynamic Factory Elimination:** Replaced `dynamic` dispatch with a pre-compiled, typed `Func<object, object, object>` delegate in the internal handler factory. This eliminates DLR (Dynamic Language Runtime) overhead and improves performance.
+- **Redundancy Cleanup:** Optimized service registration by removing redundant reflection calls during the build phase of the pipeline handler.
+- **NativeAOT Compatibility:** Improved compatibility with NativeAOT by reducing reliance on dynamic runtime features.
+
+### Benchmark Results
+- **Simple Request:** ~3.2% faster (56.3 ns vs 58.2 ns)
+- **Pipeline (2 Behaviors):** Minor latency reduction and improved consistency.
+
+---
+
 # Release Notes - Kovecses.Requests 2.2.0
 
 ## New Features

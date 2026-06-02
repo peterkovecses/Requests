@@ -13,7 +13,7 @@ public class OpenTelemetryBehaviorTests
         using var listener = new ActivityListener
         {
             ShouldListenTo = s => s.Name == "Kovecses.Requests",
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            Sample = (ref _) => ActivitySamplingResult.AllData,
             ActivityStopped = a => activities.Add(a)
         };
         ActivitySource.AddActivityListener(listener);
