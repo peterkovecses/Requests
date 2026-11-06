@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -34,28 +34,70 @@ jobs:
     - name: Test
       run: dotnet test --no-build -c Release --verbosity normal
 
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          8.0.x
+          9.0.x
+          10.0.x
+
     - name: Pack
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       run: dotnet pack src/Kovecses.Requests/Kovecses.Requests.csproj -c Release -o out
 
+    - name: NuGet Login
+      id: nuget_login
+      uses: NuGet/login@v1
+      with:
+        user: ${{ secrets.NUGET_USER }}
+
     - name: Push to NuGet
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-      run: dotnet nuget push "out/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+      run: dotnet nuget push "out/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate
 
     - name: Get Version
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       id: get_version
       run: |
         VERSION=$(grep '<Version>' src/Kovecses.Requests/Kovecses.Requests.csproj | sed -E 's/.*<Version>(.*)<\/Version>.*/\1/')
         echo "version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Extract Release Notes Section
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       run: |
         sed '/^---/q' RELEASE_NOTES.md | sed '/^---/d' > RELEASE_NOTES_TEMP.md
 
+    - name: Check Existing GitHub Release
+      id: release_check
+      uses: actions/github-script@v7
+      env:
+        RELEASE_VERSION: ${{ steps.get_version.outputs.version }}
+      with:
+        script: |
+          try {
+            await github.rest.repos.getReleaseByTag({
+              ...context.repo,
+              tag: `v${process.env.RELEASE_VERSION}`,
+            });
+            core.setOutput('exists', 'true');
+            core.info(`Release v${process.env.RELEASE_VERSION} already exists; leaving it unchanged.`);
+          } catch (error) {
+            if (error.status !== 404) throw error;
+            core.setOutput('exists', 'false');
+          }
+
     - name: Create GitHub Release
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      if: steps.release_check.outputs.exists == 'false'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ steps.get_version.outputs.version }}
