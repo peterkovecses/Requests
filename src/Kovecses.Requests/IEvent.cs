@@ -23,6 +23,13 @@ public interface IEventPublisher<TEvent> where TEvent : IEvent
     /// <param name="cancellationToken">The cancellation token passed to handlers.</param>
     /// <returns>A task that succeeds when at least one handler exists and all handlers finish successfully.</returns>
     /// <exception cref="NoEventSubscribersException">No handlers are registered for the event type.</exception>
-    /// <exception cref="AggregateException">One or more handlers failed in parallel mode.</exception>
+    /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
+    /// <exception cref="AggregateException">One or more handlers failed in parallel mode, and at least one failure was not cancellation.</exception>
+    /// <remarks>
+    /// Sequential publishing propagates the first handler exception and does not invoke later handlers.
+    /// Parallel publishing waits for all handlers; non-cancellation failures are aggregated with any cancellation
+    /// failures. If all handler failures are cancellations, the first cancellation exception is propagated.
+    /// The publisher and handlers use the current dependency injection scope.
+    /// </remarks>
     Task PublishAsync(TEvent @event, CancellationToken cancellationToken);
 }

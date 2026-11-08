@@ -1,6 +1,7 @@
 namespace Kovecses.Requests;
 
 /// <summary>Thrown when an event has no registered handlers.</summary>
+/// <remarks>The <see cref="EventType"/> property identifies the event type that was published.</remarks>
 public sealed class NoEventSubscribersException : Exception
 {
     /// <summary>The event type for which no handlers were found.</summary>

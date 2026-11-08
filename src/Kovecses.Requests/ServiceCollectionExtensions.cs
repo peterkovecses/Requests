@@ -11,7 +11,7 @@ namespace Kovecses.Requests;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers all request handlers from the specified assemblies.
+    /// Registers request and event handlers from the specified assemblies.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="assemblies">The assemblies to scan for handlers.</param>
@@ -70,7 +70,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers all request handlers from the assemblies containing the specified marker types.
+    /// Registers request and event handlers from the assemblies containing the specified marker types.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="handlerAssemblyMarkerTypes">The marker types used to identify the assemblies.</param>
@@ -79,7 +79,7 @@ public static class ServiceCollectionExtensions
         => services.AddRequests(handlerAssemblyMarkerTypes.Select(t => t.Assembly).ToArray());
 
     /// <summary>
-    /// Registers all request handlers from the assembly containing the specified marker type.
+    /// Registers request and event handlers from the assembly containing the specified marker type.
     /// </summary>
     /// <typeparam name="TMarker">The marker type used to identify the assembly.</typeparam>
     /// <param name="services">The service collection.</param>

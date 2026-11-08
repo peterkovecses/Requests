@@ -23,6 +23,8 @@ public static class RequestsBuilderExtensions
     /// <param name="builder">The requests builder.</param>
     /// <param name="strategy">The strategy to use when no event-specific override exists.</param>
     /// <returns>The builder for chaining.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="builder"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="strategy"/> is not a defined strategy.</exception>
     public static IRequestsBuilder UseEventPublishStrategy(this IRequestsBuilder builder, EventPublishStrategy strategy)
         => SetEventPublishStrategy(builder, strategy, null);
 
@@ -31,6 +33,8 @@ public static class RequestsBuilderExtensions
     /// <param name="builder">The requests builder.</param>
     /// <param name="strategy">The strategy for this event type.</param>
     /// <returns>The builder for chaining.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="builder"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="strategy"/> is not a defined strategy.</exception>
     public static IRequestsBuilder UseEventPublishStrategy<TEvent>(this IRequestsBuilder builder, EventPublishStrategy strategy)
         where TEvent : IEvent
         => SetEventPublishStrategy(builder, strategy, typeof(TEvent));
