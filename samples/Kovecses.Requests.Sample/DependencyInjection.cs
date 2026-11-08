@@ -10,6 +10,7 @@ public static class DependencyInjection
 
         services.AddRequests<Program>()
             .AddOpenTelemetry()
+            .UseEventPublishStrategy<BookCreatedEvent>(EventPublishStrategy.Parallel)
             .AddGlobalBehavior(typeof(LoggingBehavior<,>))
             .AddBehavior<IValidatable>(typeof(ValidationBehavior<,>))
             .AddBehavior<GetBooksQuery, IEnumerable<BookDto>, ActiveOnlyBehavior>();
@@ -19,6 +20,9 @@ public static class DependencyInjection
             .WithTracing(tracing => tracing
                 .AddSource("Kovecses.Requests")
                 .AddAspNetCoreInstrumentation()
+                .AddConsoleExporter())
+            .WithMetrics(metrics => metrics
+                .AddMeter(BookCreatedMetricsHandler.MeterName)
                 .AddConsoleExporter());
 
         services.AddProblemDetails();

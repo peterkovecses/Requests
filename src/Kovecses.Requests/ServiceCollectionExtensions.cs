@@ -11,7 +11,7 @@ namespace Kovecses.Requests;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers all request handlers from the specified assemblies.
+    /// Registers request and event handlers from the specified assemblies.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="assemblies">The assemblies to scan for handlers.</param>
@@ -49,11 +49,28 @@ public static class ServiceCollectionExtensions
             });
         }
 
+        var eventHandlers = assemblies
+            .SelectMany(assembly => assembly.GetTypes())
+            .Where(type => type is { IsClass: true, IsAbstract: false, ContainsGenericParameters: false })
+            .SelectMany(type => type.GetInterfaces()
+                .Where(interfaceType => interfaceType.IsGenericType
+                    && interfaceType.GetGenericTypeDefinition() == typeof(IEventHandler<>)
+                    && !interfaceType.ContainsGenericParameters)
+                .Select(interfaceType => new { ServiceType = interfaceType, ImplementationType = type }));
+
+        foreach (var handler in eventHandlers)
+        {
+            services.TryAddEnumerable(ServiceDescriptor.Transient(handler.ServiceType, handler.ImplementationType));
+        }
+
+        services.TryAddTransient(typeof(IEventPublisher<>), typeof(EventPublisher<>));
+        services.TryAddSingleton(EventPublishConfiguration.Default);
+
         return new RequestsBuilder(services, assemblies);
     }
 
     /// <summary>
-    /// Registers all request handlers from the assemblies containing the specified marker types.
+    /// Registers request and event handlers from the assemblies containing the specified marker types.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="handlerAssemblyMarkerTypes">The marker types used to identify the assemblies.</param>
@@ -62,7 +79,7 @@ public static class ServiceCollectionExtensions
         => services.AddRequests(handlerAssemblyMarkerTypes.Select(t => t.Assembly).ToArray());
 
     /// <summary>
-    /// Registers all request handlers from the assembly containing the specified marker type.
+    /// Registers request and event handlers from the assembly containing the specified marker type.
     /// </summary>
     /// <typeparam name="TMarker">The marker type used to identify the assembly.</typeparam>
     /// <param name="services">The service collection.</param>

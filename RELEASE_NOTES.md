@@ -1,3 +1,12 @@
+# Release Notes - Kovecses.Requests 2.4.0
+
+## New Features
+- **In-Process Event Messaging:** Added `IEvent`, `IEventHandler<TEvent>`, and `IEventPublisher<TEvent>` for awaited, in-process event publishing.
+- **Configurable Publishing Strategies:** Added sequential (default) and parallel handler execution, with per-event strategy overrides.
+- **Subscriber and Failure Semantics:** Publishing without subscribers throws `NoEventSubscribersException`; sequential publishing is fail-fast, while parallel handler failures are aggregated.
+
+---
+
 # Release Notes - Kovecses.Requests 2.3.0
 
 ## Performance Improvements
