@@ -97,30 +97,52 @@ internal sealed class BookCreatedAuditHandler(ILogger<BookCreatedAuditHandler> l
     }
 }
 
-internal sealed class BookCreatedNotificationHandler(ILogger<BookCreatedNotificationHandler> logger)
-    : IEventHandler<BookCreatedEvent>
+internal sealed class BookCreatedMetricsHandler : IEventHandler<BookCreatedEvent>
 {
+    private static readonly Meter Meter = new("Kovecses.Requests.Sample");
+    private static readonly Counter<long> BooksCreated = Meter.CreateCounter<long>("books.created");
+
     public Task HandleAsync(BookCreatedEvent @event, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Catalog notification prepared for the new book {BookId}", @event.Book.Id);
+        cancellationToken.ThrowIfCancellationRequested();
+        BooksCreated.Add(1);
 
         return Task.CompletedTask;
     }
 }
 ```
 
-`IEventHandler<in TEvent>` handlers are discovered from the assemblies passed to `AddRequests`. The sample's `CreateBookHandler` injects `IEventPublisher<BookCreatedEvent>` and awaits publishing after adding the book:
+`IEventHandler<in TEvent>` handlers are discovered from the assemblies passed to `AddRequests`; the sample registers both an audit handler and a metrics handler. Its metrics are exported through the sample's OpenTelemetry console exporter.
+
+The sample's `CreateBookHandler` adds the book, then awaits publishing. If a subscriber fails, it logs the failure and rethrows it rather than reporting a successful request:
 
 ```csharp
 internal sealed class CreateBookHandler(
     IBookRepository repository,
+    ILogger<CreateBookHandler> logger,
     IEventPublisher<BookCreatedEvent> eventPublisher) : IRequestHandler<CreateBookCommand, BookDto>
 {
     public async Task<BookDto> HandleAsync(CreateBookCommand request, CancellationToken cancellationToken)
     {
         var book = new BookDto(Guid.NewGuid(), request.Title, request.Author, request.Price);
         await repository.AddAsync(book, cancellationToken);
-        await eventPublisher.PublishAsync(new BookCreatedEvent(book), cancellationToken);
+
+        try
+        {
+            await eventPublisher.PublishAsync(new BookCreatedEvent(book), cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Book {BookId} was saved, but its creation event was not fully processed.",
+                book.Id);
+            throw;
+        }
 
         return book;
     }
@@ -141,7 +163,7 @@ Parallel publishing calls each handler synchronously in DI registration order to
 
 Publishing an event with no registered subscribers throws `NoEventSubscribersException`; its `EventType` property identifies the event type. A successful `PublishAsync` means at least one handler was registered and all handlers completed successfully. Handlers are resolved for the publisher's exact generic event type; DI does not automatically include handlers registered for a different base or derived event type. A token already canceled when `PublishAsync` starts takes precedence: cancellation is thrown before the no-subscriber check. In parallel mode, cancellation after that initial check does not stop the launch loop from invoking remaining handlers; the token is passed to each handler, which chooses when and whether to observe it. A cancellation occurring after the last cancellation check may go unobserved, so publishing can still complete successfully. Cancellation and handler errors can happen after other handlers have performed work.
 
-Handlers and the publisher are resolved in the same DI scope; publishing does not create a scope. In parallel mode, scoped dependencies may therefore be shared by concurrently executing handlers. Make shared dependencies safe for concurrent use, or use sequential publishing. Publishing awaits completion but does not guarantee delivery: a process shutdown, failure, or cancellation can prevent work from completing, and completed handler side effects are not rolled back.
+Handlers and the publisher are resolved in the same DI scope; publishing does not create a scope. In parallel mode, scoped dependencies may therefore be shared by concurrently executing handlers. Make shared dependencies safe for concurrent use, or use sequential publishing. Publishing awaits completion but does not guarantee delivery: a process shutdown, failure, or cancellation can prevent work from completing, and completed handler side effects are not rolled back. The sample saves the book before publishing, so a handler failure is logged and rethrown, but the repository change is not rolled back; production applications that require atomic persistence and event handling need an appropriate transaction/outbox design.
 
 ---
 

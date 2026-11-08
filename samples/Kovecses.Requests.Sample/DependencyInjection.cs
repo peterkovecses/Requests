@@ -20,6 +20,9 @@ public static class DependencyInjection
             .WithTracing(tracing => tracing
                 .AddSource("Kovecses.Requests")
                 .AddAspNetCoreInstrumentation()
+                .AddConsoleExporter())
+            .WithMetrics(metrics => metrics
+                .AddMeter(BookCreatedMetricsHandler.MeterName)
                 .AddConsoleExporter());
 
         services.AddProblemDetails();
