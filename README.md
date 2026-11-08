@@ -103,6 +103,7 @@ internal sealed class BookCreatedNotificationHandler(ILogger<BookCreatedNotifica
     public Task HandleAsync(BookCreatedEvent @event, CancellationToken cancellationToken)
     {
         logger.LogInformation("Catalog notification prepared for the new book {BookId}", @event.Book.Id);
+
         return Task.CompletedTask;
     }
 }
@@ -120,6 +121,7 @@ internal sealed class CreateBookHandler(
         var book = new BookDto(Guid.NewGuid(), request.Title, request.Author, request.Price);
         await repository.AddAsync(book, cancellationToken);
         await eventPublisher.PublishAsync(new BookCreatedEvent(book), cancellationToken);
+
         return book;
     }
 }

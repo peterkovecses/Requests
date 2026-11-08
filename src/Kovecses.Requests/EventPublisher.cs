@@ -59,6 +59,7 @@ internal sealed class EventPublisher<TEvent>(
             task = handler.HandleAsync(@event, cancellationToken)
                 ?? throw new InvalidOperationException("An event handler returned a null task.");
             await task.ConfigureAwait(false);
+
             return [];
         }
         catch (Exception exception)

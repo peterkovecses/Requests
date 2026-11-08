@@ -6,6 +6,7 @@ internal sealed class BookCreatedNotificationHandler(ILogger<BookCreatedNotifica
     public Task HandleAsync(BookCreatedEvent @event, CancellationToken cancellationToken)
     {
         logger.LogInformation("Catalog notification prepared for the new book {BookId}", @event.Book.Id);
+
         return Task.CompletedTask;
     }
 }

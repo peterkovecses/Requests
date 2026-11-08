@@ -5,6 +5,7 @@ public class EventPublishConfigurationTests
     [Fact]
     public async Task UseEventPublishStrategy_ShouldApplyLatestGlobalAndPerTypeValuesAcrossRepeatedRegistration()
     {
+        // Arrange
         var services = new ServiceCollection();
         var builder = services.AddRequests<EventPublishConfigurationTests>();
 
@@ -23,6 +24,7 @@ public class EventPublishConfigurationTests
         AddStrategyProbe<GlobalStrategyEvent>(services);
         using var provider = services.BuildServiceProvider();
 
+        // Act & Assert
         await AssertUsesStrategyAsync<TypeConfiguredBeforeGlobalEvent>(provider, parallel: false);
         await AssertUsesStrategyAsync<TypeConfiguredAfterGlobalEvent>(provider, parallel: false);
         await AssertUsesStrategyAsync<GlobalStrategyEvent>(provider, parallel: true);
@@ -31,11 +33,13 @@ public class EventPublishConfigurationTests
     [Fact]
     public async Task UseEventPublishStrategy_WhenValueIsInvalid_ShouldLeaveBothConfigurationLevelsUnchanged()
     {
+        // Arrange
         var services = new ServiceCollection();
         var builder = services.AddRequests<EventPublishConfigurationTests>();
         builder.UseEventPublishStrategy(EventPublishStrategy.Parallel);
         builder.UseEventPublishStrategy<InvalidTypeStrategyEvent>(EventPublishStrategy.Sequential);
 
+        // Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(
             () => builder.UseEventPublishStrategy((EventPublishStrategy)999));
         Assert.Throws<ArgumentOutOfRangeException>(
@@ -45,22 +49,26 @@ public class EventPublishConfigurationTests
         AddStrategyProbe<InvalidTypeStrategyEvent>(services);
         using var provider = services.BuildServiceProvider();
 
+        // Assert
         await AssertUsesStrategyAsync<GlobalAfterInvalidConfigurationEvent>(provider, parallel: true);
         await AssertUsesStrategyAsync<InvalidTypeStrategyEvent>(provider, parallel: false);
     }
 
     [Fact]
-    public async Task AddRequests_WithMessagingConfigured_ShouldPreserveRequestHandlerAndPipelineBehavior()
+    public async Task AddRequests_WhenMessagingIsConfigured_ShouldPreserveRequestHandlerAndPipelineBehavior()
     {
+        // Arrange
         var services = new ServiceCollection();
         services.AddRequests<EventPublishConfigurationTests>()
             .UseEventPublishStrategy(EventPublishStrategy.Parallel)
             .AddGlobalBehavior(typeof(RegressionBehavior<,>));
         using var provider = services.BuildServiceProvider();
 
+        // Act
         var response = await provider.GetRequiredService<IRequestHandler<RegressionRequest, string>>()
             .HandleAsync(new RegressionRequest(), CancellationToken.None);
 
+        // Assert
         Assert.Equal("Response with behavior", response);
     }
 
@@ -75,12 +83,14 @@ public class EventPublishConfigurationTests
             new DelegateEventHandler<TEvent>((_, _) =>
             {
                 firstEntered.TrySetResult();
+
                 return releaseFirst.Task;
             }));
         services.AddSingleton<IEventHandler<TEvent>>(
             new DelegateEventHandler<TEvent>((_, _) =>
             {
                 secondEntered.TrySetResult();
+
                 return Task.CompletedTask;
             }));
         StrategyProbes<TEvent>.Current = new StrategyProbe(firstEntered, releaseFirst, secondEntered);
@@ -152,6 +162,7 @@ public sealed class RegressionBehavior<TRequest, TResponse> : IPipelineBehavior<
         CancellationToken cancellationToken)
     {
         var response = await next();
+
         return response is string text
             ? (TResponse)(object)$"{text} with behavior"
             : response;

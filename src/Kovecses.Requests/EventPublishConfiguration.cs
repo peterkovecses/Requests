@@ -16,6 +16,7 @@ internal sealed class EventPublishConfiguration(
     public EventPublishConfiguration WithEventStrategy(Type eventType, EventPublishStrategy strategy)
     {
         var updated = new Dictionary<Type, EventPublishStrategy>(overrides) { [eventType] = strategy };
+
         return new EventPublishConfiguration(globalStrategy, updated);
     }
 }

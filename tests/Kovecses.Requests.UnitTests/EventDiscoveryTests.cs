@@ -3,14 +3,17 @@ namespace Kovecses.Requests.UnitTests;
 public class EventDiscoveryTests
 {
     [Fact]
-    public void AddRequests_OverloadsAndRepeatedAssemblies_ShouldRegisterEachScannedEventPairOnce()
+    public void AddRequests_WhenUsingOverloadsAndRepeatedAssemblies_ShouldRegisterEachScannedEventPairOnce()
     {
+        // Arrange
         var services = new ServiceCollection();
 
+        // Act
         services.AddRequests(typeof(DiscoveryFirstHandler).Assembly);
         services.AddRequests(typeof(DiscoveryFirstHandler));
         services.AddRequests<DiscoveryFirstHandler>();
 
+        // Assert
         Assert.Equal(3, services.Count(descriptor =>
             descriptor.ServiceType == typeof(IEventHandler<DiscoveredEvent>)));
         Assert.Equal(1, services.Count(descriptor =>
@@ -26,13 +29,16 @@ public class EventDiscoveryTests
     [Fact]
     public void AddRequests_ShouldRetainDistinctImplementationsAndMultiEventHandlers()
     {
+        // Arrange
         var services = new ServiceCollection();
         services.AddRequests<DiscoveryFirstHandler>();
         using var provider = services.BuildServiceProvider();
 
+        // Act
         var firstEventHandlers = provider.GetServices<IEventHandler<DiscoveredEvent>>().ToArray();
         var secondEventHandlers = provider.GetServices<IEventHandler<DiscoveredSecondEvent>>().ToArray();
 
+        // Assert
         Assert.Equal(
             new[] { typeof(DiscoveryFirstHandler), typeof(DiscoverySecondHandler), typeof(DiscoveryMultiHandler) }
                 .OrderBy(type => type.Name),
@@ -43,23 +49,28 @@ public class EventDiscoveryTests
     [Fact]
     public void AddRequests_ShouldRegisterScannedHandlersAsTransient()
     {
+        // Arrange
         var services = new ServiceCollection();
         services.AddRequests<DiscoveryFirstHandler>();
         using var provider = services.BuildServiceProvider();
 
+        // Act
         var first = provider.GetRequiredService<IEventHandler<DiscoveredEvent>>();
         var second = provider.GetRequiredService<IEventHandler<DiscoveredEvent>>();
 
+        // Assert
         Assert.NotSame(first, second);
     }
 
     [Fact]
     public async Task PublishAsync_ShouldSupportManualInstanceRegistrations()
     {
+        // Arrange
         var calls = 0;
         var handler = new DelegateDiscoveryHandler<ManualEvent>((_, _) =>
         {
             calls++;
+
             return Task.CompletedTask;
         });
         var factoryCalls = 0;
@@ -69,17 +80,21 @@ public class EventDiscoveryTests
         services.AddTransient<IEventHandler<ManualEvent>>(_ =>
         {
             factoryCalls++;
+
             return new DelegateDiscoveryHandler<ManualEvent>((_, _) =>
             {
                 calls++;
+
                 return Task.CompletedTask;
             });
         });
         using var provider = services.BuildServiceProvider();
 
+        // Act
         await provider.GetRequiredService<IEventPublisher<ManualEvent>>()
             .PublishAsync(new ManualEvent(), CancellationToken.None);
 
+        // Assert
         Assert.Equal(2, calls);
         Assert.Equal(1, factoryCalls);
         Assert.Same(handler, provider.GetServices<IEventHandler<ManualEvent>>().First());
@@ -88,23 +103,28 @@ public class EventDiscoveryTests
     [Fact]
     public void AddRequests_ShouldRegisterPublishersAsTransient()
     {
+        // Arrange
         var services = new ServiceCollection();
         services.AddRequests<DiscoveryFirstHandler>();
         using var provider = services.BuildServiceProvider();
 
+        // Act
         var first = provider.GetRequiredService<IEventPublisher<ManualEvent>>();
         var second = provider.GetRequiredService<IEventPublisher<ManualEvent>>();
 
+        // Assert
         Assert.NotSame(first, second);
     }
 
     [Fact]
     public void ResolvePublisher_WhenScannedHandlerDependencyIsMissing_ShouldFailBeforePublish()
     {
+        // Arrange
         var services = new ServiceCollection();
         services.AddRequests<BrokenDependencyHandler>();
         using var provider = services.BuildServiceProvider();
 
+        // Act & Assert
         Assert.Throws<InvalidOperationException>(
             () => provider.GetRequiredService<IEventPublisher<BrokenDependencyEvent>>());
     }
@@ -112,6 +132,7 @@ public class EventDiscoveryTests
     [Fact]
     public async Task PublishAsync_ShouldShareScopedDependenciesWithinScopeAndSeparateThemAcrossScopes()
     {
+        // Arrange
         var services = new ServiceCollection();
         services.AddScoped<SharedScopedProbe>();
         services.AddScoped<ScopedObservations>();
@@ -119,24 +140,29 @@ public class EventDiscoveryTests
         using var provider = services.BuildServiceProvider();
 
         SharedScopedProbe firstScopeProbe;
+        // Act
         await using (var scope = provider.CreateAsyncScope())
         {
             await scope.ServiceProvider.GetRequiredService<IEventPublisher<ScopedDependencyEvent>>()
                 .PublishAsync(new ScopedDependencyEvent(), CancellationToken.None);
 
+            // Assert
             var observed = scope.ServiceProvider.GetRequiredService<ScopedObservations>();
             Assert.Equal(2, observed.Probes.Count);
             Assert.Same(observed.Probes[0], observed.Probes[1]);
             firstScopeProbe = observed.Probes[0];
         }
 
+        // Assert
         Assert.True(firstScopeProbe.IsDisposed);
 
+        // Act
         await using (var scope = provider.CreateAsyncScope())
         {
             await scope.ServiceProvider.GetRequiredService<IEventPublisher<ScopedDependencyEvent>>()
                 .PublishAsync(new ScopedDependencyEvent(), CancellationToken.None);
 
+            // Assert
             var observed = scope.ServiceProvider.GetRequiredService<ScopedObservations>();
             Assert.Equal(2, observed.Probes.Count);
             Assert.Same(observed.Probes[0], observed.Probes[1]);
@@ -147,12 +173,14 @@ public class EventDiscoveryTests
     [Fact]
     public async Task PublishAsync_ShouldKeepScopedDependenciesAliveUntilAwaitedWorkAndScopeEnd()
     {
+        // Arrange
         var services = new ServiceCollection();
         services.AddScoped<ScopedWaitProbe>();
         services.AddScoped<ScopedWaitGate>();
         services.AddRequests<ScopedWaitHandler>();
         using var provider = services.BuildServiceProvider();
         ScopedWaitProbe probe;
+        // Act
         await using (var scope = provider.CreateAsyncScope())
         {
             probe = scope.ServiceProvider.GetRequiredService<ScopedWaitProbe>();
@@ -162,6 +190,7 @@ public class EventDiscoveryTests
                 .PublishAsync(new ScopedWaitEvent(), CancellationToken.None);
             await gate.Entered.Task;
 
+            // Assert
             Assert.False(probe.IsDisposed);
             Assert.False(publish.IsCompleted);
 
@@ -170,12 +199,14 @@ public class EventDiscoveryTests
             Assert.False(probe.IsDisposed);
         }
 
+        // Assert
         Assert.True(probe.IsDisposed);
     }
 
     [Fact]
-    public async Task PublishAsync_Parallel_ShouldShareOneScopedDependencyAcrossHandlers()
+    public async Task PublishAsync_WhenParallel_ShouldShareOneScopedDependencyAcrossHandlers()
     {
+        // Arrange
         var services = new ServiceCollection();
         services.AddScoped<SharedScopedProbe>();
         services.AddScoped<ScopedObservations>();
@@ -184,9 +215,11 @@ public class EventDiscoveryTests
         using var provider = services.BuildServiceProvider();
         await using var scope = provider.CreateAsyncScope();
 
+        // Act
         await scope.ServiceProvider.GetRequiredService<IEventPublisher<ParallelScopedDependencyEvent>>()
             .PublishAsync(new ParallelScopedDependencyEvent(), CancellationToken.None);
 
+        // Assert
         var observed = scope.ServiceProvider.GetRequiredService<ScopedObservations>();
         Assert.Equal(2, observed.Probes.Count);
         Assert.Same(observed.Probes[0], observed.Probes[1]);
@@ -233,6 +266,7 @@ public sealed class BrokenDependencyHandler(UnregisteredHandlerDependency depend
     public Task HandleAsync(BrokenDependencyEvent @event, CancellationToken cancellationToken)
     {
         GC.KeepAlive(dependency);
+
         return Task.CompletedTask;
     }
 }
@@ -248,6 +282,7 @@ public sealed class ScopedDependencyFirstHandler(
     public Task HandleAsync(ScopedDependencyEvent @event, CancellationToken cancellationToken)
     {
         observations.Probes.Add(probe);
+
         return Task.CompletedTask;
     }
 }
@@ -259,6 +294,7 @@ public sealed class ScopedDependencySecondHandler(
     public Task HandleAsync(ScopedDependencyEvent @event, CancellationToken cancellationToken)
     {
         observations.Probes.Add(probe);
+
         return Task.CompletedTask;
     }
 }
@@ -270,6 +306,7 @@ public sealed class ParallelScopedDependencyFirstHandler(
     public Task HandleAsync(ParallelScopedDependencyEvent @event, CancellationToken cancellationToken)
     {
         observations.Probes.Add(probe);
+
         return Task.CompletedTask;
     }
 }
@@ -281,6 +318,7 @@ public sealed class ParallelScopedDependencySecondHandler(
     public Task HandleAsync(ParallelScopedDependencyEvent @event, CancellationToken cancellationToken)
     {
         observations.Probes.Add(probe);
+
         return Task.CompletedTask;
     }
 }

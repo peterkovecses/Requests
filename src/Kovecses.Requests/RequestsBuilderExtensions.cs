@@ -50,6 +50,7 @@ public static class RequestsBuilderExtensions
             ? configuration.WithGlobalStrategy(strategy)
             : configuration.WithEventStrategy(eventType, strategy);
         builder.Services.Replace(ServiceDescriptor.Singleton(updated));
+
         return builder;
     }
 }
