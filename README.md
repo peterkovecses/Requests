@@ -114,12 +114,11 @@ internal sealed class BookCreatedMetricsHandler : IEventHandler<BookCreatedEvent
 
 `IEventHandler<in TEvent>` handlers are discovered from the assemblies passed to `AddRequests`; the sample registers both an audit handler and a metrics handler. Its metrics are exported through the sample's OpenTelemetry console exporter.
 
-The sample's `CreateBookHandler` adds the book, then awaits publishing. If a subscriber fails, it logs the failure and rethrows it rather than reporting a successful request:
+The sample's `CreateBookHandler` adds the book, then awaits publishing. Use the `catch` block for application-specific failure handling; rethrow so a failed publish is not reported as a successful request:
 
 ```csharp
 internal sealed class CreateBookHandler(
     IBookRepository repository,
-    ILogger<CreateBookHandler> logger,
     IEventPublisher<BookCreatedEvent> eventPublisher) : IRequestHandler<CreateBookCommand, BookDto>
 {
     public async Task<BookDto> HandleAsync(CreateBookCommand request, CancellationToken cancellationToken)
@@ -131,16 +130,9 @@ internal sealed class CreateBookHandler(
         {
             await eventPublisher.PublishAsync(new BookCreatedEvent(book), cancellationToken);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (Exception)
         {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            logger.LogError(
-                exception,
-                "Book {BookId} was saved, but its creation event was not fully processed.",
-                book.Id);
+            // Apply application-specific failure handling here; rethrow so the request does not report success.
             throw;
         }
 
