@@ -49,6 +49,23 @@ public static class ServiceCollectionExtensions
             });
         }
 
+        var eventHandlers = assemblies
+            .SelectMany(assembly => assembly.GetTypes())
+            .Where(type => type is { IsClass: true, IsAbstract: false, ContainsGenericParameters: false })
+            .SelectMany(type => type.GetInterfaces()
+                .Where(interfaceType => interfaceType.IsGenericType
+                    && interfaceType.GetGenericTypeDefinition() == typeof(IEventHandler<>)
+                    && !interfaceType.ContainsGenericParameters)
+                .Select(interfaceType => new { ServiceType = interfaceType, ImplementationType = type }));
+
+        foreach (var handler in eventHandlers)
+        {
+            services.TryAddEnumerable(ServiceDescriptor.Transient(handler.ServiceType, handler.ImplementationType));
+        }
+
+        services.TryAddTransient(typeof(IEventPublisher<>), typeof(EventPublisher<>));
+        services.TryAddSingleton(EventPublishConfiguration.Default);
+
         return new RequestsBuilder(services, assemblies);
     }
 

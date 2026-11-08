@@ -73,6 +73,76 @@ app.MapGet("books", async (
 
 ---
 
+## In-Process Event Messaging
+
+Events let a request handler notify multiple parts of the application without depending directly on them. Publishing is **in-process and awaited**: it does not enqueue work or provide durable delivery.
+
+### Define an event and its handlers
+
+```csharp
+public sealed record BookCreatedEvent(BookDto Book) : IEvent;
+
+internal sealed class BookCreatedAuditHandler(ILogger<BookCreatedAuditHandler> logger)
+    : IEventHandler<BookCreatedEvent>
+{
+    public Task HandleAsync(BookCreatedEvent @event, CancellationToken cancellationToken)
+    {
+        logger.LogInformation(
+            "Book created: {BookId} - {Title} by {Author}",
+            @event.Book.Id,
+            @event.Book.Title,
+            @event.Book.Author);
+
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class BookCreatedNotificationHandler(ILogger<BookCreatedNotificationHandler> logger)
+    : IEventHandler<BookCreatedEvent>
+{
+    public Task HandleAsync(BookCreatedEvent @event, CancellationToken cancellationToken)
+    {
+        logger.LogInformation("Catalog notification prepared for the new book {BookId}", @event.Book.Id);
+        return Task.CompletedTask;
+    }
+}
+```
+
+`IEventHandler<in TEvent>` handlers are discovered from the assemblies passed to `AddRequests`. The sample's `CreateBookHandler` injects `IEventPublisher<BookCreatedEvent>` and awaits publishing after adding the book:
+
+```csharp
+internal sealed class CreateBookHandler(
+    IBookRepository repository,
+    IEventPublisher<BookCreatedEvent> eventPublisher) : IRequestHandler<CreateBookCommand, BookDto>
+{
+    public async Task<BookDto> HandleAsync(CreateBookCommand request, CancellationToken cancellationToken)
+    {
+        var book = new BookDto(Guid.NewGuid(), request.Title, request.Author, request.Price);
+        await repository.AddAsync(book, cancellationToken);
+        await eventPublisher.PublishAsync(new BookCreatedEvent(book), cancellationToken);
+        return book;
+    }
+}
+```
+
+Set a default strategy and, optionally, override it for one event type. The event-specific setting takes precedence:
+
+```csharp
+builder.Services.AddRequests<Program>()
+    .UseEventPublishStrategy(EventPublishStrategy.Sequential) // default for all events
+    .UseEventPublishStrategy<BookCreatedEvent>(EventPublishStrategy.Parallel);
+```
+
+Sequential publishing awaits handlers in DI registration order and stops at the first handler error. If handlers are registered explicitly, this is their registration order. Assembly scanning registers handlers in scan order, for which the library does not guarantee a stable order across builds or environments.
+
+Parallel publishing calls each handler synchronously in DI registration order to obtain its task, then awaits all of them; their completion order is not guaranteed. It waits for every invoked handler even when one or more fail. If any non-cancellation exception occurs, all captured exceptions (including cancellation exceptions) are reported in an `AggregateException`, even when there is only one failure. If every failure is an `OperationCanceledException`, the first captured cancellation exception is propagated directly.
+
+Publishing an event with no registered subscribers throws `NoEventSubscribersException`; its `EventType` property identifies the event type. A successful `PublishAsync` means at least one handler was registered and all handlers completed successfully. Handlers are resolved for the publisher's exact generic event type; DI does not automatically include handlers registered for a different base or derived event type. A token already canceled when `PublishAsync` starts takes precedence: cancellation is thrown before the no-subscriber check. In parallel mode, cancellation after that initial check does not stop the launch loop from invoking remaining handlers; the token is passed to each handler, which chooses when and whether to observe it. A cancellation occurring after the last cancellation check may go unobserved, so publishing can still complete successfully. Cancellation and handler errors can happen after other handlers have performed work.
+
+Handlers and the publisher are resolved in the same DI scope; publishing does not create a scope. In parallel mode, scoped dependencies may therefore be shared by concurrently executing handlers. Make shared dependencies safe for concurrent use, or use sequential publishing. Publishing awaits completion but does not guarantee delivery: a process shutdown, failure, or cancellation can prevent work from completing, and completed handler side effects are not rolled back.
+
+---
+
 ## Usage in Background Services
 
 When injecting handlers into Singleton services (like `BackgroundService`), always use `IServiceScopeFactory` to resolve the handler within a new scope. This prevents captive dependencies and ensures the Transient pipeline behaves correctly.

@@ -10,6 +10,7 @@ public static class DependencyInjection
 
         services.AddRequests<Program>()
             .AddOpenTelemetry()
+            .UseEventPublishStrategy<BookCreatedEvent>(EventPublishStrategy.Parallel)
             .AddGlobalBehavior(typeof(LoggingBehavior<,>))
             .AddBehavior<IValidatable>(typeof(ValidationBehavior<,>))
             .AddBehavior<GetBooksQuery, IEnumerable<BookDto>, ActiveOnlyBehavior>();
